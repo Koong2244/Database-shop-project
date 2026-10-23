@@ -143,7 +143,6 @@ def search_products(filters):
     return run_query(sql, params)
 
 
-
 # def get_product(product_id):
 #     """ดึง สินค้า 1 รายการตาม product_id (ใช้ตอนเปิดฟอร์มแก้ไข)"""
 #     # TODO: SELECT * FROM product WHERE product_id = %s แล้วคืนแถวเดียว
