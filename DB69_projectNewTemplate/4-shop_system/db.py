@@ -220,9 +220,19 @@ def search_orders(filters):
         WHERE 1=1
     """
     params = []
+    
+    # ถ้ามีการกรอกช่องค้นหาลูกค้า
     if filters.get("cust_id"):
-        sql += " AND o.cust_id = %s"
-        params.append(filters["cust_id"])
+        val = str(filters["cust_id"]).strip()
+        if val.isdigit():
+            # ถ้าพิมพ์มาเป็นตัวเลข ให้ค้นหาจาก cust_id
+            sql += " AND o.cust_id = %s"
+            params.append(int(val))
+        else:
+            # ถ้าพิมพ์มาเป็นข้อความ ให้ค้นหาจาก c.name
+            sql += " AND c.name LIKE %s"
+            params.append(f"%{val}%")
+
     if filters.get("status"):
         sql += " AND o.status = %s"
         params.append(filters["status"])
@@ -280,43 +290,62 @@ def create_order(data):
         conn.start_transaction()
         cursor = conn.cursor(dictionary=True)
 
+        # ตรวจสอบลูกค้า
+        cust_val = str(data["cust_id"]).strip()
+        if cust_val.isdigit():
+            cust_id = int(cust_val)
+        else:
+            cursor.execute("SELECT cust_id FROM customer WHERE name = %s", (cust_val,))
+            cust_row = cursor.fetchone()
+            if not cust_row:
+                raise ValueError(f"ไม่พบข้อมูลลูกค้านี้: {cust_val}")
+            cust_id = cust_row["cust_id"]
+
+        # บันทึก shop_order
         sql_order = """
             INSERT INTO shop_order (cust_id, coupon_code, order_date, status)
             VALUES (%s, %s, %s, %s)
         """
         cursor.execute(sql_order, (
-            data["cust_id"],
+            cust_id,
             data.get("coupon_code") or None,
             data["order_date"],
             data.get("status", "pending")
         ))
         order_id = cursor.lastrowid
 
-        #บันทึก order_line ถ้ามีการเลือกสินค้า
+        # ตรวจสอบสต็อกและบันทึก order_line
         if data.get("product_id") and data.get("qty"):
-            product_id = int(data["product_id"])
-            qty = int(data["qty"])
+            prod_val = str(data["product_id"]).strip()
+            qty = int(data.get("qty", 1))
+
+            if prod_val.isdigit():
+                cursor.execute("SELECT product_id, name, price, stock FROM product WHERE product_id = %s", (int(prod_val),))
+            else:
+                cursor.execute("SELECT product_id, name, price, stock FROM product WHERE name = %s", (prod_val,))
             
-            #ดึงราคาปัจจุบันของสินค้า
-            cursor.execute("SELECT price, stock FROM product WHERE product_id = %s", (product_id,))
             prod = cursor.fetchone()
             if prod:
+                # ตรวจสอบสต็อกคงเหลือ
+                if prod["stock"] < qty:
+                    raise ValueError(f"สินค้า '{prod['name']}' สินค้าคงเหลือไม่พอ (เหลือเพียง {prod['stock']} ชิ้น)")
+
+                product_id = prod["product_id"]
                 unit_price = prod["price"]
+                
                 cursor.execute(
                     "INSERT INTO order_line (order_id, product_id, qty, unit_price) VALUES (%s, %s, %s, %s)",
                     (order_id, product_id, qty, unit_price)
                 )
-                # ตัดสต็อกสินค้า
                 cursor.execute("UPDATE product SET stock = stock - %s WHERE product_id = %s", (qty, product_id))
 
-        # บันทึก payment (ถ้ามีการระบุวิธีชำระเงิน)
-        if data.get("payment_method") and data["payment_method"] != "-":
-            # คำนวณยอดเงินรวม
-            total_amt = (unit_price * qty) if 'unit_price' in locals() else 0
-            cursor.execute(
-                "INSERT INTO payment (order_id, method, amount, paid_date) VALUES (%s, %s, %s, NOW())",
-                (order_id, data["payment_method"], total_amt)
-            )
+                # บันทึก payment
+                if data.get("payment_method") and data["payment_method"] != "-":
+                    total_amt = unit_price * qty
+                    cursor.execute(
+                        "INSERT INTO payment (order_id, method, amount, paid_date) VALUES (%s, %s, %s, NOW())",
+                        (order_id, data["payment_method"], total_amt)
+                    )
 
         conn.commit()
         return {"status": "success", "order_id": order_id}
