@@ -129,7 +129,6 @@ const ENTITIES = {
     "label": "ออเดอร์",
     "api": "/api/orders",
     "idKey": "order_id",
-    // กำหนดคอลัมน์ที่จะโชว์บนตาราง
     "columns": [
       { "key": "order_id", "label": "รหัสออเดอร์" },
       { "key": "cust_name", "label": "ลูกค้า" },
