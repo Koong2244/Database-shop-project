@@ -53,8 +53,12 @@
 
 
 <!-- python --version
-cd DB69_projectNewTemplate
 
+cd Database-shop-project
+cd DB69_projectNewTemplate
 cd 4-shop_system
+
+cd Database-shop-project\DB69_projectNewTemplate\4-shop_system
+
 pip install -r requirements.txt
 python app.py  -->
