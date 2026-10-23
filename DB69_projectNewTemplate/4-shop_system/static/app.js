@@ -156,14 +156,14 @@ const ENTITIES = {
       }
     ],
     "form": [
-      {
-        "key": "cust_id",
-        "label": "ลูกค้า",
-        "type": "select_api",
-        "api": "/api/customers",
-        "valueKey": "cust_id",
-        "labelKey": "name"
-      },
+        {
+          "key": "cust_id",
+          "label": "ลูกค้า",
+          "type": "select_api",
+          "api": "/api/customers",
+          "valueKey": "cust_id",  
+          "labelKey": "name"      
+        },
       {
         "key": "product_id",
         "label": "เลือกสินค้าที่ซื้อ",
