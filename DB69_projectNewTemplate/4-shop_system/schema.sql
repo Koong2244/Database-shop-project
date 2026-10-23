@@ -126,7 +126,7 @@ constraint review_rating_chk 	check (rating between 1 and 5)
 -- TODO: order_id (FK), method, amount, paid_date
 create table payment (
     payment_id  int AUTO_INCREMENT,
-    order_id    int NOT NULL	UNIQUE,
+    order_id    int NOT NULL,
     method      varchar(50)	NOT NULL,
     amount      decimal(10,2) NOT NULL,
     paid_date   DATETIME NOT NULL,
