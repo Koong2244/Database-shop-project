@@ -17,25 +17,24 @@ def get_connection():
 #     conn = get_connection(); cur = conn.cursor(dictionary=True)
 #     cur.execute(sql, params or ()); rows = cur.fetchall()
 #     cur.close(); conn.close(); return rows
-def run_query(sql, params=None):
+def run_query(sql, params=None, commit=False):
     conn = get_connection()
-    cur = conn.cursor(dictionary=True)
-    cur.execute(sql, params or ())
-    
-    # ตรวจสอบว่าเป็นคำสั่งที่เปลี่ยนแปลงข้อมูลหรือไม่
-    sql_upper = sql.strip().upper()
-    if sql_upper.startswith(("INSERT", "UPDATE", "DELETE")):
-        conn.commit()  # บันทึกการเปลี่ยนแปลง
-        affected = cur.rowcount
-        cur.close()
+    cursor = conn.cursor(dictionary=True)
+    try:
+        cursor.execute(sql, params or [])
+        if commit:
+            conn.commit()
+            return {"status": "success"}
+        result = cursor.fetchall()
+        return result
+    except Exception as e:
+        if commit:
+            conn.rollback()
+        raise e
+    finally:
+        cursor.close()
         conn.close()
-        return affected
-
-    # สำหรับคำสั่ง SELECT ดึงข้อมูลปกติ
-    rows = cur.fetchall()
-    cur.close()
-    conn.close()
-    return rows
+    
 
 
 def run_command(sql, params=None):
@@ -433,7 +432,11 @@ def update_coupon(_id, data):
         data.get("valid_until") if data.get("valid_until") else None,
         _id
     ]
-    return run_query(sql, params, commit=True)
+    return run_query(sql, params, commit=True)  
+
+def delete_coupon(_id):
+    sql = "DELETE FROM coupon WHERE coupon_code = %s"
+    return run_query(sql, [_id], commit=True) 
 
 def delete_coupon(_id):
     sql = "DELETE FROM coupon WHERE coupon_code = %s"
