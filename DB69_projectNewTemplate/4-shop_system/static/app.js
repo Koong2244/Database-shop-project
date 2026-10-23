@@ -130,23 +130,19 @@ const ENTITIES = {
     "api": "/api/orders",
     "idKey": "order_id",
     "search": [
-      {
-        "key": "cust_id",
-        "label": "รหัสลูกค้า",
-        "type": "number"
-      },
+      { "key": "cust_id", "label": "รหัสลูกค้า", "type": "number" },
       {
         "key": "status",
         "label": "สถานะ",
         "type": "select",
         "options": [
-          "",
-          "pending",
-          "waiting",
-          "paid",
-          "shipped",
-          "completed",
-          "cancelled"
+          { "value": "", "label": "ทั้งหมด" },
+          { "value": "pending", "label": "pending" },
+          { "value": "waiting", "label": "waiting" },
+          { "value": "paid", "label": "paid" },
+          { "value": "shipped", "label": "shipped" },
+          { "value": "completed", "label": "completed" },
+          { "value": "cancelled", "label": "cancelled" }
         ]
       }
     ],
@@ -154,29 +150,43 @@ const ENTITIES = {
       {
         "key": "cust_id",
         "label": "ลูกค้า",
-        "type": "select",
-        "optionsFrom": {
-          "api": "/api/customers",
-          "value": "cust_id",
-          "label": "name"
-        }
+        "type": "select_api",
+        "api": "/api/customers",
+        "valueKey": "cust_id",
+        "labelKey": "name"
       },
       {
-        "key": "order_date",
-        "label": "วันที่สั่ง",
-        "type": "date"
+        "key": "product_id",
+        "label": "เลือกสินค้าที่ซื้อ",
+        "type": "select_api",
+        "api": "/api/products",
+        "valueKey": "product_id",
+        "labelKey": "name"
       },
+      { "key": "qty", "label": "จำนวน (ชิ้น)", "type": "number", "default": 1 },
+      {
+        "key": "payment_method",
+        "label": "ช่องทางการชำระเงิน",
+        "type": "select",
+        "options": [
+          { "value": "-", "label": "-- ยังไม่ชำระ --" },
+          { "value": "PromptPay", "label": "PromptPay" },
+          { "value": "Credit Card", "label": "Credit Card" },
+          { "value": "Bank Transfer", "label": "Bank Transfer" }
+        ]
+      },
+      { "key": "order_date", "label": "วันที่สั่ง", "type": "date" },
       {
         "key": "status",
         "label": "สถานะ",
         "type": "select",
         "options": [
-          "pending",
-          "waiting",
-          "paid",
-          "shipped",
-          "completed",
-          "cancelled"
+          { "value": "pending", "label": "pending" },
+          { "value": "waiting", "label": "waiting" },
+          { "value": "paid", "label": "paid" },
+          { "value": "shipped", "label": "shipped" },
+          { "value": "completed", "label": "completed" },
+          { "value": "cancelled", "label": "cancelled" }
         ]
       }
     ]
