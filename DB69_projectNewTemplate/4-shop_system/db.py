@@ -416,22 +416,32 @@ def create_coupon(data):
     )
     return run_command(sql, params)
 
-def update_coupon(coupon_code, data):
+def update_coupon(_id, data):
     sql = """
         UPDATE coupon 
-        SET discount_pct=%s, discount_amt=%s, min_spend=%s, usage_limit=%s, valid_from=%s, valid_until=%s
-        WHERE coupon_code=%s
+        SET discount_pct = %s, discount_amt = %s, min_spend = %s, 
+            usage_limit = %s, is_active = %s, valid_from = %s, valid_until = %s
+        WHERE coupon_code = %s
     """
-    params = (
-        data.get("discount_pct", 0) or 0,
-        data.get("discount_amt", 0) or 0,
-        data.get("min_spend", 0) or 0,
-        data.get("usage_limit") or None,
-        data.get("valid_from") or None,
-        data["valid_until"],
-        coupon_code
-    )
-    return run_command(sql, params)
+    params = [
+        data.get("discount_pct", 0),
+        data.get("discount_amt", 0),
+        data.get("min_spend", 0),
+        data.get("usage_limit") if data.get("usage_limit") != "" else None,
+        int(data.get("is_active", 1)),
+        data.get("valid_from") if data.get("valid_from") else None,
+        data.get("valid_until") if data.get("valid_until") else None,
+        _id
+    ]
+    return run_query(sql, params, commit=True)
+
+def delete_coupon(_id):
+    sql = "DELETE FROM coupon WHERE coupon_code = %s"
+    return run_query(sql, [_id], commit=True)
+
+def delete_coupon(code):
+    sql = "DELETE FROM coupon WHERE coupon_code = %s"
+    return run_query(sql, [code], commit=True)
 
 def delete_coupon(coupon_code):
     return run_command("DELETE FROM coupon WHERE coupon_code=%s", (coupon_code,))
