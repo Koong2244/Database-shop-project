@@ -204,35 +204,31 @@ def delete_product(product_id):
 def search_orders(filters):
     sql = """
         SELECT 
-            so.order_id,
-            so.cust_id,
-            c.name AS cust_name,
-            so.order_date,
-            so.status,
-            IFNULL(ol.total, 0) AS total
-        FROM shop_order so
-        JOIN customer c ON so.cust_id = c.cust_id
-        LEFT JOIN (
-            SELECT order_id, SUM(qty * unit_price) AS total
-            FROM order_line
-            GROUP BY order_id
-        ) ol ON so.order_id = ol.order_id
+            o.order_id, 
+            o.cust_id, 
+            c.name AS cust_name, 
+            o.coupon_code, 
+            o.order_date, 
+            o.status,
+            COALESCE(p.method, '-') AS payment_method,
+            COALESCE(SUM(ol.qty * ol.unit_price), 0) AS total
+        FROM shop_order o
+        JOIN customer c ON o.cust_id = c.cust_id
+        LEFT JOIN order_line ol ON o.order_id = ol.order_id
+        LEFT JOIN payment p ON o.order_id = p.order_id
         WHERE 1=1
     """
     params = []
-
-    if filters:
-        if filters.get("cust_id"):
-            sql += " AND so.cust_id = %s"
-            params.append(filters["cust_id"])
-
-        if filters.get("status"):
-            sql += " AND so.status = %s"
-            params.append(filters["status"])
-
-    sql += " ORDER BY so.order_id DESC"
-    
-    return run_query(sql, tuple(params) if params else None)
+    if filters.get("cust_id"):
+        sql += " AND o.cust_id = %s"
+        params.append(filters["cust_id"])
+    if filters.get("status"):
+        sql += " AND o.status = %s"
+        params.append(filters["status"])
+        
+    sql += " GROUP BY o.order_id, o.cust_id, c.name, o.coupon_code, o.order_date, o.status, p.method"
+    sql += " ORDER BY o.order_id DESC"
+    return run_query(sql, params)
 
 
 # def get_order(order_id):
@@ -278,19 +274,57 @@ def check_can_ship(order_id):
 #     # TODO: เขียนตามคำใบ้
 #     _todo("create_order")
 def create_order(data):
-    cust_id = data.get("cust_id")
-    order_date = data.get("order_date")
-    status = data.get("status", "pending")
+    conn = get_connection()
+    try:
+        conn.start_transaction()
+        cursor = conn.cursor(dictionary=True)
 
-    if status == "shipped":
-        raise ValueError("ออเดอร์ใหม่ยังไม่ได้ชำระเงิน ไม่สามารถตั้งสถานะเป็น 'shipped' ได้")
+        sql_order = """
+            INSERT INTO shop_order (cust_id, coupon_code, order_date, status)
+            VALUES (%s, %s, %s, %s)
+        """
+        cursor.execute(sql_order, (
+            data["cust_id"],
+            data.get("coupon_code") or None,
+            data["order_date"],
+            data.get("status", "pending")
+        ))
+        order_id = cursor.lastrowid
 
-    sql = """
-        INSERT INTO shop_order (cust_id, order_date, status)
-        VALUES (%s, %s, %s)
-    """
-    params = (cust_id, order_date, status)
-    return run_command(sql, params)
+        #บันทึก order_line ถ้ามีการเลือกสินค้า
+        if data.get("product_id") and data.get("qty"):
+            product_id = int(data["product_id"])
+            qty = int(data["qty"])
+            
+            #ดึงราคาปัจจุบันของสินค้า
+            cursor.execute("SELECT price, stock FROM product WHERE product_id = %s", (product_id,))
+            prod = cursor.fetchone()
+            if prod:
+                unit_price = prod["price"]
+                cursor.execute(
+                    "INSERT INTO order_line (order_id, product_id, qty, unit_price) VALUES (%s, %s, %s, %s)",
+                    (order_id, product_id, qty, unit_price)
+                )
+                # ตัดสต็อกสินค้า
+                cursor.execute("UPDATE product SET stock = stock - %s WHERE product_id = %s", (qty, product_id))
+
+        # บันทึก payment (ถ้ามีการระบุวิธีชำระเงิน)
+        if data.get("payment_method") and data["payment_method"] != "-":
+            # คำนวณยอดเงินรวม
+            total_amt = (unit_price * qty) if 'unit_price' in locals() else 0
+            cursor.execute(
+                "INSERT INTO payment (order_id, method, amount, paid_date) VALUES (%s, %s, %s, NOW())",
+                (order_id, data["payment_method"], total_amt)
+            )
+
+        conn.commit()
+        return {"status": "success", "order_id": order_id}
+    except Exception as e:
+        conn.rollback()
+        raise e
+    finally:
+        cursor.close()
+        conn.close()
 
 
 # def update_order(order_id, data):
