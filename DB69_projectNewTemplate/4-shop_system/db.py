@@ -207,15 +207,17 @@ def search_orders(filters):
             o.order_id, 
             o.cust_id, 
             c.name AS cust_name, 
+            COALESCE(GROUP_CONCAT(CONCAT(p.name, ' (x', ol.qty, ')') SEPARATOR ', '), '-') AS items_detail,
             o.coupon_code, 
             o.order_date, 
             o.status,
-            COALESCE(p.method, '-') AS payment_method,
+            COALESCE(pay.method, '-') AS payment_method,
             COALESCE(SUM(ol.qty * ol.unit_price), 0) AS total
         FROM shop_order o
         JOIN customer c ON o.cust_id = c.cust_id
         LEFT JOIN order_line ol ON o.order_id = ol.order_id
-        LEFT JOIN payment p ON o.order_id = p.order_id
+        LEFT JOIN product p ON ol.product_id = p.product_id
+        LEFT JOIN payment pay ON o.order_id = pay.order_id
         WHERE 1=1
     """
     params = []
@@ -226,7 +228,7 @@ def search_orders(filters):
         sql += " AND o.status = %s"
         params.append(filters["status"])
         
-    sql += " GROUP BY o.order_id, o.cust_id, c.name, o.coupon_code, o.order_date, o.status, p.method"
+    sql += " GROUP BY o.order_id, o.cust_id, c.name, o.coupon_code, o.order_date, o.status, pay.method"
     sql += " ORDER BY o.order_id DESC"
     return run_query(sql, params)
 
