@@ -130,10 +130,12 @@ def coupon_get(_id):
 def coupon_create():
     return safe(db.create_coupon, request.json)
 
+# API แก้ไขคูปอง
 @app.route("/api/coupons/<string:_id>", methods=["PUT"])
 def coupon_update(_id):
     return safe(db.update_coupon, _id, request.json)
 
+# API ลบคูปอง
 @app.route("/api/coupons/<string:_id>", methods=["DELETE"])
 def coupon_delete(_id):
     return safe(db.delete_coupon, _id)
