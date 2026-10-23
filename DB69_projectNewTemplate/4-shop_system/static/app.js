@@ -261,7 +261,7 @@ function fieldHtml(f, prefix, value = "") {
         return '<option value="' + v + '"' + (String(v) === String(value ?? "") ? " selected" : "") + '>' + t + '</option>';
       }).join("") + '</select>';
   } else if (f.type === "datalist") {
-    // โครงสร้าง Input + Datalist พิมพ์เองได้ / คลิกเลือกได้
+    //Input + Datalist พิมพ์ คลิกเลือกได้
     const listId = prefix + f.key + "_list";
     input = '<input id="' + prefix + f.key + '" list="' + listId + '" value="' + (value ?? "") + '" placeholder="พิมพ์ค้นหา หรือเลือกรายชื่อ...">' +
       '<datalist id="' + listId + '">' +
