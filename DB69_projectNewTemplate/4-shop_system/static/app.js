@@ -204,7 +204,7 @@ const ENTITIES = {
 "coupons": {
     "label": "คูปองส่วนลด",
     "api": "/api/coupons",
-    "idKey": "coupon_code",
+    "idKey": "coupon_code", 
     "search": [
       { "key": "code", "label": "รหัสคูปอง", "type": "text" },
       {
@@ -220,10 +220,11 @@ const ENTITIES = {
     ],
     "form": [
       { "key": "coupon_code", "label": "รหัสคูปอง", "type": "text" },
-      { "key": "discount_pct", "label": "ส่วนลด (%)", "type": "number" },
-      { "key": "discount_amt", "label": "ส่วนลด (บาท)", "type": "number" },
-      { "key": "min_spend", "label": "ยอดซื้อขั้นต่ำ", "type": "number" },
+      { "key": "discount_pct", "label": "ส่วนลด (%)", "type": "number", "default": 0 },
+      { "key": "discount_amt", "label": "ส่วนลด (บาท)", "type": "number", "default": 0 },
+      { "key": "min_spend", "label": "ยอดซื้อขั้นต่ำ", "type": "number", "default": 0 },
       { "key": "usage_limit", "label": "จำกัดสิทธิ์ (ครั้ง)", "type": "number" },
+      { "key": "is_active", "label": "สถานะ (1=เปิด, 0=ปิด)", "type": "number", "default": 1 },
       { "key": "valid_from", "label": "วันเริ่มใช้", "type": "date" },
       { "key": "valid_until", "label": "วันหมดอายุ", "type": "date" }
     ]
