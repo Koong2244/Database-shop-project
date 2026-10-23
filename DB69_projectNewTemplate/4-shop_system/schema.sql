@@ -78,7 +78,8 @@ create table shop_order (
 		order_date		DATE NOT NULL,
 		status			ENUM('pending', 'waiting', 'paid', 'shipped', 'completed', 'cancelled') NOT NULL DEFAULT 'pending',
 constraint 	order_id_pk			primary key (order_id),	
-constraint	cust_id_fk			foreign key (cust_id)	references customer(cust_id)	ON DELETE CASCADE
+constraint	cust_id_fk			foreign key (cust_id)	    references customer(cust_id)	ON DELETE CASCADE,
+constraint  order_coupon_fk     foreign key (coupon_code)   references coupon(coupon_code)  ON DELETE SET NULL
 );
 
 
