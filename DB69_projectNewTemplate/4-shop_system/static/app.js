@@ -129,6 +129,16 @@ const ENTITIES = {
     "label": "ออเดอร์",
     "api": "/api/orders",
     "idKey": "order_id",
+    // กำหนดคอลัมน์ที่จะโชว์บนตาราง
+    "columns": [
+      { "key": "order_id", "label": "รหัสออเดอร์" },
+      { "key": "cust_name", "label": "ลูกค้า" },
+      { "key": "items_detail", "label": "รายการสินค้า" },
+      { "key": "payment_method", "label": "การชำระเงิน" },
+      { "key": "order_date", "label": "วันที่สั่ง" },
+      { "key": "status", "label": "สถานะ" },
+      { "key": "total", "label": "ยอดรวม" }
+    ],
     "search": [
       { "key": "cust_id", "label": "รหัสลูกค้า", "type": "number" },
       {
