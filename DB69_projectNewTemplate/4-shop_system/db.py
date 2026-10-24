@@ -590,11 +590,11 @@ def report_customers_above_avg():
                     c.name                       AS 'ชื่อลูกค้า',
                     SUM(ol.qty * ol.unit_price)  AS 'ยอดซื้อรวม'
              FROM shop_order so
-             INNER JOIN customer c ON so.cust_id = c.cust_id
-             INNER JOIN order_line ol ON so.order_id = ol.order_id 
+             INNER JOIN customer c ON so.cust_id = c.cust_id  //ดึงชื่อลูกค้า
+             INNER JOIN order_line ol ON so.order_id = ol.order_id   //ดึงรายการสินค้าและราคา
              GROUP BY c.cust_id, c.name
              HAVING SUM(ol.qty * ol.unit_price) > (
-                 SELECT AVG(total_amount) 
+                 SELECT AVG(total_amount)  
                  FROM (
                      SELECT SUM(ol2.qty * ol2.unit_price) AS total_amount
                      FROM shop_order so2
