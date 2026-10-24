@@ -160,14 +160,14 @@ const ENTITIES = {
       }
     ],
     "form": [
-        {
-          "key": "cust_id",
-          "label": "ลูกค้า",
-          "type": "select_api",
-          "api": "/api/customers",
-          "valueKey": "cust_id",  
-          "labelKey": "name"      
-        },
+      {
+        "key": "cust_id",
+        "label": "ลูกค้า",
+        "type": "select_api",
+        "api": "/api/customers",
+        "valueKey": "cust_id",  
+        "labelKey": "name"      
+      },
       {
         "key": "product_id",
         "label": "เลือกสินค้าที่ซื้อ",
@@ -176,7 +176,13 @@ const ENTITIES = {
         "valueKey": "product_id",
         "labelKey": "name"
       },
-      { "key": "qty", "label": "จำนวน (ชิ้น)", "type": "number", "default": 1 },
+      { 
+        "key": "qty", 
+        "label": "จำนวน (ชิ้น)", 
+        "type": "number", 
+        "min": 1,         // <-- เพิ่มบรรทัดนี้ เพื่อป้องกันกดลงต่ำกว่า 1 หรือติดลบ
+        "default": 1 
+      },
       {
         "key": "payment_method",
         "label": "ช่องทางการชำระเงิน",
