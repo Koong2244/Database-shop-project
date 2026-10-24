@@ -494,6 +494,22 @@ def create_coupon(data):
     return run_command(sql, params)
 
 def update_coupon(_id, data):
+    discount_pct = float(data.get("discount_pct", 0) or 0)
+    discount_amt = float(data.get("discount_amt", 0) or 0)
+    min_spend = float(data.get("min_spend", 0) or 0)
+    usage_limit = data.get("usage_limit")
+    is_active = int(data.get("is_active", 1) or 0)
+
+    # ตรวจสอบค่าติดลบก่อนบันทึกลงฐานข้อมูล
+    if discount_pct < 0 or discount_amt < 0:
+        raise ValueError("ส่วนลดต้องไม่เป็นค่าติดลบ")
+    if min_spend < 0:
+        raise ValueError("ยอดซื้อขั้นต่ำต้องไม่เป็นค่าติดลบ")
+    if usage_limit is not None and usage_limit != "" and int(usage_limit) < 0:
+        raise ValueError("จำกัดสิทธิ์ต้องไม่เป็นค่าติดลบ")
+    if is_active < 0 or is_active > 1:
+        raise ValueError("สถานะต้องเป็น 0 (ปิด) หรือ 1 (เปิด) เท่านั้น")
+
     sql = """
         UPDATE coupon 
         SET discount_pct = %s, discount_amt = %s, min_spend = %s, 
@@ -501,16 +517,16 @@ def update_coupon(_id, data):
         WHERE coupon_code = %s
     """
     params = [
-        data.get("discount_pct", 0),
-        data.get("discount_amt", 0),
-        data.get("min_spend", 0),
-        data.get("usage_limit") if data.get("usage_limit") != "" else None,
-        int(data.get("is_active", 1)),
+        discount_pct,
+        discount_amt,
+        min_spend,
+        int(usage_limit) if usage_limit is not None and usage_limit != "" else None,
+        is_active,
         data.get("valid_from") if data.get("valid_from") else None,
         data.get("valid_until") if data.get("valid_until") else None,
         _id
     ]
-    return run_query(sql, params, commit=True)  
+    return run_query(sql, params, commit=True) 
 
 def delete_coupon(_id):
     sql = "DELETE FROM coupon WHERE coupon_code = %s"
