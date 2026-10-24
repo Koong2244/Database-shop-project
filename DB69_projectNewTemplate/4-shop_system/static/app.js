@@ -115,12 +115,16 @@ const ENTITIES = {
       {
         "key": "price",
         "label": "ราคา",
-        "type": "number"
+        "type": "number",
+        "min": 0,       
+        "default": 0
       },
       {
         "key": "stock",
         "label": "สต็อก",
-        "type": "number"
+        "type": "number",
+        "min": 0,        
+        "default": 0
       }
     ]
   },
