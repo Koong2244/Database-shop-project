@@ -384,15 +384,22 @@ def create_order(data):
 #     # TODO: เขียนตามคำใบ้
 #     _todo("update_order")
 def update_order(order_id, data):
+    if "qty" in data and data["qty"] is not None:
+        try:
+            qty = int(data["qty"])
+            if qty <= 0:
+                raise ValueError("จำนวนสินค้าที่สั่งซื้อต้องมากกว่า 0 ชิ้น")
+        except (ValueError, TypeError):
+            raise ValueError("จำนวนสินค้าต้องเป็นตัวเลขที่มากกว่า 0")
+
     cust_val = str(data.get("cust_id")).strip()
     order_date = data.get("order_date")
     status = data.get("status")
 
-    # ถ้าเปลี่ยนสถานะเป็น shipped ต้องตรวจสอบก่อนว่าจัดส่งได้หรือไม่
+    # ตรวจสอบสถานะการจัดส่ง
     if status == "shipped":
         check_can_ship(order_id)
 
-    # แปลงชื่อลูกค้าเป็น cust_id
     if cust_val.isdigit():
         cust_id = int(cust_val)
     else:
@@ -406,6 +413,7 @@ def update_order(order_id, data):
             raise ValueError(f"ไม่พบข้อมูลลูกค้านี้: {cust_val}")
         cust_id = cust_row["cust_id"]
 
+    # อัปเดตข้อมูลในตาราง shop_order
     sql = """
         UPDATE shop_order
         SET cust_id = %s,
@@ -414,7 +422,14 @@ def update_order(order_id, data):
         WHERE order_id = %s
     """
     params = (cust_id, order_date, status, order_id)
-    return run_query(sql, params, commit=True)
+    result = run_query(sql, params, commit=True)
+
+    # อัปเดตจำนวนสินค้าใน order_line
+    if "qty" in data and data["qty"] is not None:
+        sql_line = "UPDATE order_line SET qty = %s WHERE order_id = %s"
+        run_query(sql_line, (int(data["qty"]), order_id), commit=True)
+
+    return result
 
 
 # def delete_order(order_id):
