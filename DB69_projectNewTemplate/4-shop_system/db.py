@@ -590,8 +590,8 @@ def report_customers_above_avg():
                     c.name                       AS 'ชื่อลูกค้า',
                     SUM(ol.qty * ol.unit_price)  AS 'ยอดซื้อรวม'
              FROM shop_order so
-             INNER JOIN customer c ON so.cust_id = c.cust_id  //ดึงชื่อลูกค้า
-             INNER JOIN order_line ol ON so.order_id = ol.order_id   //ดึงรายการสินค้าและราคา
+             INNER JOIN customer c ON so.cust_id = c.cust_id  #ดึงชื่อลูกค้า
+             INNER JOIN order_line ol ON so.order_id = ol.order_id   #ดึงรายการสินค้าและราคา
              GROUP BY c.cust_id, c.name
              HAVING SUM(ol.qty * ol.unit_price) > (
                  SELECT AVG(total_amount)  
@@ -612,7 +612,7 @@ def report_high_rated():
     		    ROUND(AVG(r.rating), 2) AS 'คะแนนเฉลี่ย',
                 COUNT(r.comment) AS 'จำนวนรีวิว'
         FROM review r
-        INNER JOIN product p ON r.product_id = p.product_id   //ตารางสินค้า
+        INNER JOIN product p ON r.product_id = p.product_id   #ตารางสินค้า
         GROUP BY p.product_id, p.name
         HAVING AVG(r.rating) >= 4
         ORDER BY คะแนนเฉลี่ย DESC"""
