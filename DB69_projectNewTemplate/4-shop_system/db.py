@@ -296,12 +296,17 @@ def check_can_ship(order_id):
 #     # TODO: เขียนตามคำใบ้
 #     _todo("create_order")
 def create_order(data):
+    # ออเดอร์สร้างใหม่จะจัดส่ง (shipped) ทันทีไม่ได้
+    status = data.get("status", "pending")
+    if status == "shipped":
+        raise ValueError("ไม่สามารถสร้างออเดอร์ในสถานะ 'shipped' ได้เนื่องจากยังไม่มีการชำระเงิน")
+
     conn = get_connection()
     try:
         conn.start_transaction()
         cursor = conn.cursor(dictionary=True)
 
-        # ตรวจสอบลูกค้า
+        # ตรวจสอบลูกค้า 
         cust_val = str(data["cust_id"]).strip()
         if cust_val.isdigit():
             cust_id = int(cust_val)
@@ -312,7 +317,7 @@ def create_order(data):
                 raise ValueError(f"ไม่พบข้อมูลลูกค้านี้: {cust_val}")
             cust_id = cust_row["cust_id"]
 
-        # บันทึก shop_order
+        # บันทึกข้อมูลลงตาราง shop_order
         sql_order = """
             INSERT INTO shop_order (cust_id, coupon_code, order_date, status)
             VALUES (%s, %s, %s, %s)
@@ -321,14 +326,17 @@ def create_order(data):
             cust_id,
             data.get("coupon_code") or None,
             data["order_date"],
-            data.get("status", "pending")
+            status
         ))
         order_id = cursor.lastrowid
 
-        # ตรวจสอบสต็อกและบันทึก order_line
+        # ตรวจสอบสต็อกและบันทึกรายการสินค้า
         if data.get("product_id") and data.get("qty"):
             prod_val = str(data["product_id"]).strip()
             qty = int(data.get("qty", 1))
+
+            if qty <= 0:
+                raise ValueError("จำนวนสินค้าที่สั่งซื้อต้องมากกว่า 0 ชิ้น")
 
             if prod_val.isdigit():
                 cursor.execute("SELECT product_id, name, price, stock FROM product WHERE product_id = %s", (int(prod_val),))
@@ -337,7 +345,7 @@ def create_order(data):
             
             prod = cursor.fetchone()
             if prod:
-                # ตรวจสอบสต็อกคงเหลือ
+                # ตรวจสอบว่าสินค้าในสต็อกเพียงพอหรือไม่
                 if prod["stock"] < qty:
                     raise ValueError(f"สินค้า '{prod['name']}' สินค้าคงเหลือไม่พอ (เหลือเพียง {prod['stock']} ชิ้น)")
 
@@ -350,7 +358,7 @@ def create_order(data):
                 )
                 cursor.execute("UPDATE product SET stock = stock - %s WHERE product_id = %s", (qty, product_id))
 
-                # บันทึก payment
+                # บันทึกการชำระเงิน (payment)
                 if data.get("payment_method") and data["payment_method"] != "-":
                     total_amt = unit_price * qty
                     cursor.execute(
@@ -376,12 +384,27 @@ def create_order(data):
 #     # TODO: เขียนตามคำใบ้
 #     _todo("update_order")
 def update_order(order_id, data):
-    cust_id = data.get("cust_id")
+    cust_val = str(data.get("cust_id")).strip()
     order_date = data.get("order_date")
     status = data.get("status")
 
+    # ถ้าเปลี่ยนสถานะเป็น shipped ต้องตรวจสอบก่อนว่าจัดส่งได้หรือไม่
     if status == "shipped":
         check_can_ship(order_id)
+
+    # แปลงชื่อลูกค้าเป็น cust_id
+    if cust_val.isdigit():
+        cust_id = int(cust_val)
+    else:
+        conn = get_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT cust_id FROM customer WHERE name = %s", (cust_val,))
+        cust_row = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        if not cust_row:
+            raise ValueError(f"ไม่พบข้อมูลลูกค้านี้: {cust_val}")
+        cust_id = cust_row["cust_id"]
 
     sql = """
         UPDATE shop_order
@@ -391,7 +414,7 @@ def update_order(order_id, data):
         WHERE order_id = %s
     """
     params = (cust_id, order_date, status, order_id)
-    return run_query(sql, params)
+    return run_query(sql, params, commit=True)
 
 
 # def delete_order(order_id):
