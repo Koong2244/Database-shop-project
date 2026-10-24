@@ -163,22 +163,33 @@ def get_categories():
 #     # TODO: INSERT INTO product (...) VALUES (%s, ...)
 #     _todo("create_product")
 def create_product(data):
-    return run_command(
-        "INSERT INTO product (name, category, price, stock) "
-        "VALUES (%s, %s, %s, %s)",
-        (data["name"], data["category"], data["price"], data["stock"])) 
+    price = float(data.get("price", 0))
+    stock = int(data.get("stock", 0))
+
+    if price < 0:
+        raise ValueError("ราคาสินค้าต้องไม่ติดลบ")
+    if stock < 0:
+        raise ValueError("จำนวนสต็อกต้องไม่ติดลบ")
+
+    sql = "INSERT INTO product (name, category, price, stock) VALUES (%s, %s, %s, %s)"
+    return run_query(sql, [data.get("name"), data.get("category"), price, stock], commit=True)
 
 
 # def update_product(product_id, data):
 #     """แก้ไข สินค้า ตาม product_id"""
 #     # TODO: UPDATE product SET ... WHERE product_id=%s
 #     _todo("update_product")
-def update_product(product_id, data):
-    return run_command(
-        "UPDATE product SET name=%s, category=%s, price=%s, "
-        "stock=%s WHERE product_id=%s",
-        (data["name"], data["category"], data["price"],
-         data["stock"], product_id))
+def update_product(_id, data):
+    price = float(data.get("price", 0))
+    stock = int(data.get("stock", 0))
+
+    if price < 0:
+        raise ValueError("ราคาสินค้าต้องไม่ติดลบ")
+    if stock < 0:
+        raise ValueError("จำนวนสต็อกต้องไม่ติดลบ")
+
+    sql = "UPDATE product SET name = %s, category = %s, price = %s, stock = %s WHERE product_id = %s"
+    return run_query(sql, [data.get("name"), data.get("category"), price, stock, _id], commit=True)
 
 
 # def delete_product(product_id):
