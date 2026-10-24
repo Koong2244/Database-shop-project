@@ -612,7 +612,7 @@ def report_high_rated():
     		    ROUND(AVG(r.rating), 2) AS 'คะแนนเฉลี่ย',
                 COUNT(r.comment) AS 'จำนวนรีวิว'
         FROM review r
-        INNER JOIN product p ON r.product_id = p.product_id
+        INNER JOIN product p ON r.product_id = p.product_id   //ตารางสินค้า
         GROUP BY p.product_id, p.name
         HAVING AVG(r.rating) >= 4
         ORDER BY คะแนนเฉลี่ย DESC"""
