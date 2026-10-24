@@ -271,14 +271,17 @@ function fieldHtml(f, prefix, value = "") {
         return '<option value="' + v + '"' + (String(v) === String(value ?? "") ? " selected" : "") + '>' + t + '</option>';
       }).join("") + '</select>';
   } else if (f.type === "datalist") {
-    //Input + Datalist พิมพ์ คลิกเลือกได้
     const listId = prefix + f.key + "_list";
     input = '<input id="' + prefix + f.key + '" list="' + listId + '" value="' + (value ?? "") + '" placeholder="พิมพ์ค้นหา หรือเลือกรายชื่อ...">' +
       '<datalist id="' + listId + '">' +
       (f.options || []).map(o => '<option value="' + o.value + '">' + o.label + '</option>').join("") +
       '</datalist>';
   } else {
-    input = '<input id="' + prefix + f.key + '" type="' + f.type + '" value="' + (value ?? "") + '">';
+    // 📌 ดึงค่า min และ max มาใส่ใน attribute ของ input
+    const minAttr = f.min !== undefined ? ' min="' + f.min + '"' : '';
+    const maxAttr = f.max !== undefined ? ' max="' + f.max + '"' : '';
+    
+    input = '<input id="' + prefix + f.key + '" type="' + f.type + '"' + minAttr + maxAttr + ' value="' + (value ?? "") + '">';
   }
   
   return '<div class="field"><label>' + f.label + '</label>' + input + '</div>';
